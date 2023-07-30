@@ -6,27 +6,27 @@ import { CreateBookmarkDto, EditBookmarkDto } from './dto';
 export class BookmarkService {
   constructor(private prisma: PrismaService) {}
 
-  getBookmarks(userId: number) {
+  getBookmarks(user_id: number) {
     return this.prisma.bookmark.findMany({
       where: {
-        userId,
+        user_id,
       },
     });
   }
 
-  getBookmarkById(userId: number, bookmarkId: number) {
+  getBookmarkById(user_id: number, bookmarkId: number) {
     return this.prisma.bookmark.findFirst({
       where: {
         id: bookmarkId,
-        userId,
+        user_id,
       },
     });
   }
 
-  async createBookmark(userId: number, dto: CreateBookmarkDto) {
+  async createBookmark(user_id: number, dto: CreateBookmarkDto) {
     const bookmark = await this.prisma.bookmark.create({
       data: {
-        userId,
+        user_id,
         ...dto,
       },
     });
@@ -35,7 +35,7 @@ export class BookmarkService {
   }
 
   async editBookmarkById(
-    userId: number,
+    user_id: number,
     bookmarkId: number,
     dto: EditBookmarkDto,
   ) {
@@ -47,7 +47,7 @@ export class BookmarkService {
     });
 
     // check if user owns the bookmark
-    if (!bookmark || bookmark.userId !== userId)
+    if (!bookmark || bookmark.user_id !== user_id)
       throw new ForbiddenException('Access to resources denied');
 
     return this.prisma.bookmark.update({
@@ -60,7 +60,7 @@ export class BookmarkService {
     });
   }
 
-  async deleteBookmarkById(userId: number, bookmarkId: number) {
+  async deleteBookmarkById(user_id: number, bookmarkId: number) {
     const bookmark = await this.prisma.bookmark.findUnique({
       where: {
         id: bookmarkId,
@@ -68,7 +68,7 @@ export class BookmarkService {
     });
 
     // check if user owns the bookmark
-    if (!bookmark || bookmark.userId !== userId)
+    if (!bookmark || bookmark.user_id !== user_id)
       throw new ForbiddenException('Access to resources denied');
 
     await this.prisma.bookmark.delete({
