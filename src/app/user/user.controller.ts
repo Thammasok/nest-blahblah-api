@@ -6,7 +6,7 @@ import { EditUserDto } from './dto';
 import { UserService } from './user.service';
 
 @UseGuards(JwtGuard)
-@Controller('users')
+@Controller({ path: 'users', version: '1' })
 export class UserController {
   constructor(private userService: UserService) {}
   @Get('me')
