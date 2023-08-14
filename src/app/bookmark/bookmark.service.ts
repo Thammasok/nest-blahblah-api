@@ -1,6 +1,6 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { CreateBookmarkDto, EditBookmarkDto } from './dto';
+import { ForbiddenException, Injectable } from '@nestjs/common'
+import { PrismaService } from '../../prisma/prisma.service'
+import { CreateBookmarkDto, EditBookmarkDto } from './dto'
 
 @Injectable()
 export class BookmarkService {
@@ -11,7 +11,7 @@ export class BookmarkService {
       where: {
         user_id,
       },
-    });
+    })
   }
 
   getBookmarkById(user_id: number, bookmarkId: number) {
@@ -20,7 +20,7 @@ export class BookmarkService {
         id: bookmarkId,
         user_id,
       },
-    });
+    })
   }
 
   async createBookmark(user_id: number, dto: CreateBookmarkDto) {
@@ -29,9 +29,9 @@ export class BookmarkService {
         user_id,
         ...dto,
       },
-    });
+    })
 
-    return bookmark;
+    return bookmark
   }
 
   async editBookmarkById(
@@ -44,11 +44,11 @@ export class BookmarkService {
       where: {
         id: bookmarkId,
       },
-    });
+    })
 
     // check if user owns the bookmark
     if (!bookmark || bookmark.user_id !== user_id)
-      throw new ForbiddenException('Access to resources denied');
+      throw new ForbiddenException('Access to resources denied')
 
     return this.prisma.bookmark.update({
       where: {
@@ -57,7 +57,7 @@ export class BookmarkService {
       data: {
         ...dto,
       },
-    });
+    })
   }
 
   async deleteBookmarkById(user_id: number, bookmarkId: number) {
@@ -65,16 +65,16 @@ export class BookmarkService {
       where: {
         id: bookmarkId,
       },
-    });
+    })
 
     // check if user owns the bookmark
     if (!bookmark || bookmark.user_id !== user_id)
-      throw new ForbiddenException('Access to resources denied');
+      throw new ForbiddenException('Access to resources denied')
 
     await this.prisma.bookmark.delete({
       where: {
         id: bookmarkId,
       },
-    });
+    })
   }
 }

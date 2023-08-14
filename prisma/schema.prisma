@@ -10,6 +10,37 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Account {
+  id             BigInt          @id @default(autoincrement())
+  uid            String          @unique @db.VarChar(255)
+  display_name   String          @db.VarChar(255)
+  email          String          @unique @db.VarChar(255)
+  password       String          @db.VarChar(255)
+  language       String          @default("en-EN") @db.VarChar(5)
+  date_format    String          @default("dd-mm-yyyy") @db.VarChar(10)
+  time_zone      String          @default("+0700") @db.VarChar(50)
+  is_verify      Boolean         @default(false)
+  is_remove      Boolean         @default(false)
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
+  account_verify AccountVerify[]
+
+  @@map("accounts")
+}
+
+model AccountVerify {
+  account_id     BigInt   @id
+  verify_code    String   @db.VarChar(6)
+  verify_ref     String   @db.VarChar(4)
+  verify_expire  DateTime
+  send_completed Boolean  @default(false)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  account        Account  @relation(fields: [account_id], references: [id])
+
+  @@map("account_verify")
+}
+
 model User {
   id Int @id @default(autoincrement())
 

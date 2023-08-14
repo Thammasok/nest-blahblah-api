@@ -6,9 +6,9 @@ import {
   Post,
   Put,
   // Version,
-} from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { AuthDto } from './dto';
+} from '@nestjs/common'
+import { AuthService } from './auth.service'
+import { AuthSignInDto, AuthSignUpDto } from './dto'
 
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
@@ -16,14 +16,14 @@ export class AuthController {
 
   // @Version('1')
   @Put('signup')
-  signup(@Body() dto: AuthDto) {
-    return this.authService.signup(dto);
+  signup(@Body() dto: AuthSignUpDto) {
+    return this.authService.signup(dto)
   }
 
   // @Version('1')
   @HttpCode(HttpStatus.OK)
   @Post('signin')
-  signin(@Body() dto: AuthDto) {
-    return this.authService.signin(dto);
+  signin(@Body() dto: AuthSignInDto) {
+    return this.authService.signin(dto)
   }
 }
