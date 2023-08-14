@@ -40,3 +40,19 @@ export class AuthSignInDto {
   })
   password: string
 }
+
+export class AuthResendVerifyDto {
+  @IsEmail()
+  @IsNotEmpty()
+  email: string
+}
+
+export class AuthVerifyMailDto {
+  @IsNotEmpty()
+  @IsString()
+  token: string
+
+  @IsEmail()
+  @IsNotEmpty()
+  email: string
+}

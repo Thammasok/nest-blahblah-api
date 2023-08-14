@@ -1,10 +1,17 @@
 import * as bcrypt from 'bcrypt'
+import dayjs from 'dayjs'
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
-import { AuthSignInDto, AuthSignUpDto } from './dto'
+import {
+  AuthResendVerifyDto,
+  AuthSignInDto,
+  AuthSignUpDto,
+  AuthVerifyMailDto,
+} from './dto'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
+import { v4 as uuidv4 } from 'uuid'
 import { UuidStrategy } from './strategy'
 
 @Injectable()
@@ -18,13 +25,15 @@ export class AuthService {
 
   async signup(dto: AuthSignUpDto) {
     const uuid = await this.uuid.getUUID()
+    const verify = await this.getVerifyCode()
 
     try {
       const initData = {
         uid: uuid,
         language: 'en-EN',
         date_format: 'dd-mm-yyyy',
-        time_zone: '+0700',
+        time_zone: '+07:00',
+        ...verify,
       }
 
       // generate the password hash
@@ -90,6 +99,79 @@ export class AuthService {
 
     return {
       access_token: token,
+    }
+  }
+
+  async resendVerifyMail(dto: AuthResendVerifyDto) {
+    const verify = await this.getVerifyCode()
+    const account = await this.prisma.account.update({
+      where: {
+        email: dto.email,
+      },
+      data: {
+        ...verify,
+      },
+    })
+
+    if (!account)
+      if (!account)
+        throw new ForbiddenException(
+          'cannot send verify to your email, plase try again',
+        )
+
+    return {
+      msg: 'send verify to your email completed',
+    }
+  }
+
+  async verifyMail(dto: AuthVerifyMailDto) {
+    const now = dayjs().format()
+
+    const checkVerify = await this.prisma.account.count({
+      where: {
+        email: dto.email,
+        verify_token: dto.token,
+        verify_expired: {
+          gte: now,
+        },
+      },
+    })
+
+    if (checkVerify === 0)
+      throw new ForbiddenException('email, token or date expired is incorrect')
+
+    const account = await this.prisma.account.update({
+      where: {
+        email: dto.email,
+      },
+      data: {
+        verify_token: null,
+        verify_expired: null,
+        is_verify: true,
+      },
+    })
+
+    if (!account)
+      if (!account)
+        throw new ForbiddenException('cannot verify email, plase try again')
+
+    return {
+      msg: 'verify your email completed',
+    }
+  }
+
+  async getVerifyCode(): Promise<{
+    verify_token: string
+    verify_expired: string
+  }> {
+    const token = uuidv4()
+
+    //dayjs().format()// => current date in ISO8601, without fraction seconds e.g. '2020-04-02T08:02:17-05:00'
+    const now = dayjs().add(1, 'day').format()
+
+    return {
+      verify_token: token,
+      verify_expired: now,
     }
   }
 }

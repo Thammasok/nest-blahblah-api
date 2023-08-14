@@ -16,11 +16,13 @@ model Account {
   display_name   String          @db.VarChar(255)
   email          String          @unique @db.VarChar(255)
   password       String          @db.VarChar(255)
-  language       String          @default("en-EN") @db.VarChar(5)
-  date_format    String          @default("dd-mm-yyyy") @db.VarChar(10)
-  time_zone      String          @default("+0700") @db.VarChar(50)
-  is_verify      Boolean         @default(false)
-  is_remove      Boolean         @default(false)
+  language       String?         @default("en-EN") @db.VarChar(5)
+  date_format    String?         @default("dd-mm-yyyy") @db.VarChar(10)
+  time_zone      String?         @default("+07:00") @db.VarChar(50)
+  verify_token   String?         @db.VarChar(255)
+  verify_expired DateTime?       @db.Timestamp()
+  is_verify      Boolean?        @default(false)
+  is_remove      Boolean?        @default(false)
   created_at     DateTime        @default(now())
   updated_at     DateTime        @updatedAt
   account_verify AccountVerify[]

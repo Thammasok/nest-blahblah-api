@@ -8,7 +8,12 @@ import {
   // Version,
 } from '@nestjs/common'
 import { AuthService } from './auth.service'
-import { AuthSignInDto, AuthSignUpDto } from './dto'
+import {
+  AuthResendVerifyDto,
+  AuthSignInDto,
+  AuthSignUpDto,
+  AuthVerifyMailDto,
+} from './dto'
 
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
@@ -25,5 +30,17 @@ export class AuthController {
   @Post('signin')
   signin(@Body() dto: AuthSignInDto) {
     return this.authService.signin(dto)
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('resend-verify')
+  resendVerifyMail(@Body() dto: AuthResendVerifyDto) {
+    return this.authService.resendVerifyMail(dto)
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('email-verify')
+  verifyMail(@Body() dto: AuthVerifyMailDto) {
+    return this.authService.verifyMail(dto)
   }
 }
