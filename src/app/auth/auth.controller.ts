@@ -3,6 +3,7 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Put,
   // Version,
@@ -20,7 +21,7 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   // @Version('1')
-  @Put('signup')
+  @Post('signup')
   signup(@Body() dto: AuthSignUpDto) {
     return this.authService.signup(dto)
   }
@@ -39,7 +40,7 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Post('email-verify')
+  @Patch('email-verify')
   verifyMail(@Body() dto: AuthVerifyMailDto) {
     return this.authService.verifyMail(dto)
   }

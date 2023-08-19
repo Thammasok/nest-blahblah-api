@@ -69,17 +69,6 @@ export class AuthService {
   }
 
   async signin(dto: AuthSignInDto) {
-    this.mailService.sendMail({
-      to: 'jaranchai.nt@hotmail.com',
-      from: '"No Reply" <roman2093@gmail.com>',
-      subject: 'Testing Nest MailerModule ✔',
-      template: 'simple',
-      context: {
-        code: 'cf1a3f828287',
-        username: 'john doe',
-      },
-    })
-
     // find the user by email
     const account = await this.prisma.account.findUnique({
       where: {
@@ -117,6 +106,21 @@ export class AuthService {
 
   async resendVerifyMail(dto: AuthResendVerifyDto) {
     const verify = await this.getVerifyCode()
+
+    this.mailService.sendMail({
+      to: dto.email,
+      from: `"${this.config.get('MAIL_DEFAULT_FROM_NANE')}" <${this.config.get(
+        'MAIL_DEFAULT_FROM_EMAIL',
+      )}>`,
+      subject: 'Please verify e-mail address for example.com',
+      template: 'auth/email-verify',
+      context: {
+        email: dto.email,
+        verify_url: this.config.get('MAIL_VERIFY_URL'),
+        verify_token: verify.verify_token,
+      },
+    })
+
     const account = await this.prisma.account.update({
       where: {
         email: dto.email,

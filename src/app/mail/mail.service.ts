@@ -37,8 +37,7 @@ export class MailService {
         return true
       })
       .catch((error) => {
-        console.log('errors', error)
-        // this.logger.error(error)
+        this.logger.error(error)
         return false
       })
   }

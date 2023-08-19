@@ -1,8 +1,9 @@
 import PrismaClient from '@prisma/client'
+import * as uuid from 'uuid'
+import { ConfigService } from '@nestjs/config'
+
 import { PrismaService } from '../../../prisma/prisma.service'
 import { UuidStrategy } from './uuid.strategy'
-import { ConfigService } from '@nestjs/config'
-import * as uuid from 'uuid'
 
 // Mocking data
 const uuidResult = 'random-uuid-12345'
@@ -24,7 +25,7 @@ jest.mock('@prisma/client', () => {
   }
 })
 
-describe('CatsController', () => {
+describe('UUID Strategy', () => {
   let configService: ConfigService
   let uuidStrategy: UuidStrategy
   let prismaService: PrismaService
