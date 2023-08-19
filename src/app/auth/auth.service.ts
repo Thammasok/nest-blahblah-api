@@ -13,6 +13,7 @@ import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import { v4 as uuidv4 } from 'uuid'
 import { UuidStrategy } from './strategy'
+import { MailService } from '../mail/mail.service'
 
 @Injectable()
 export class AuthService {
@@ -21,6 +22,7 @@ export class AuthService {
     private jwt: JwtService,
     private config: ConfigService,
     private uuid: UuidStrategy,
+    private mailService: MailService,
   ) {}
 
   async signup(dto: AuthSignUpDto) {
@@ -67,6 +69,17 @@ export class AuthService {
   }
 
   async signin(dto: AuthSignInDto) {
+    this.mailService.sendMail({
+      to: 'jaranchai.nt@hotmail.com',
+      from: '"No Reply" <roman2093@gmail.com>',
+      subject: 'Testing Nest MailerModule ✔',
+      template: 'simple',
+      context: {
+        code: 'cf1a3f828287',
+        username: 'john doe',
+      },
+    })
+
     // find the user by email
     const account = await this.prisma.account.findUnique({
       where: {
