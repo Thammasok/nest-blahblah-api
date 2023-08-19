@@ -13,7 +13,7 @@ import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import { v4 as uuidv4 } from 'uuid'
 import { UuidStrategy } from './strategy'
-import { MailService } from '../mail/mail.service'
+import { MailService } from '../../helpers/mail/mail.service'
 
 @Injectable()
 export class AuthService {
