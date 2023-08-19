@@ -2,7 +2,7 @@ import PrismaClient from '@prisma/client'
 import * as uuid from 'uuid'
 import { ConfigService } from '@nestjs/config'
 
-import { PrismaService } from '../../../prisma/prisma.service'
+import { PrismaService } from '../../../helpers/prisma/prisma.service'
 import { UuidStrategy } from './uuid.strategy'
 
 // Mocking data

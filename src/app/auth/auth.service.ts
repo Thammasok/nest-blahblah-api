@@ -1,7 +1,7 @@
 import * as bcrypt from 'bcrypt'
 import dayjs from 'dayjs'
 import { ForbiddenException, Injectable } from '@nestjs/common'
-import { PrismaService } from '../../prisma/prisma.service'
+import { PrismaService } from '../../helpers/prisma/prisma.service'
 import {
   AuthResendVerifyDto,
   AuthSignInDto,
