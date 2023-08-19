@@ -13,6 +13,7 @@ import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import { v4 as uuidv4 } from 'uuid'
 import { UuidStrategy } from './strategy'
+import { MailService } from '../mail/mail.service'
 
 @Injectable()
 export class AuthService {
@@ -21,6 +22,7 @@ export class AuthService {
     private jwt: JwtService,
     private config: ConfigService,
     private uuid: UuidStrategy,
+    private mailService: MailService,
   ) {}
 
   async signup(dto: AuthSignUpDto) {
@@ -104,6 +106,21 @@ export class AuthService {
 
   async resendVerifyMail(dto: AuthResendVerifyDto) {
     const verify = await this.getVerifyCode()
+
+    this.mailService.sendMail({
+      to: dto.email,
+      from: `"${this.config.get('MAIL_DEFAULT_FROM_NANE')}" <${this.config.get(
+        'MAIL_DEFAULT_FROM_EMAIL',
+      )}>`,
+      subject: 'Please verify e-mail address for example.com',
+      template: 'auth/email-verify',
+      context: {
+        email: dto.email,
+        verify_url: this.config.get('MAIL_VERIFY_URL'),
+        verify_token: verify.verify_token,
+      },
+    })
+
     const account = await this.prisma.account.update({
       where: {
         email: dto.email,
