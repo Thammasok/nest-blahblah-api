@@ -7,6 +7,7 @@ import { BookmarkModule } from './app/bookmark/bookmark.module'
 import { PrismaModule } from './helpers/prisma/prisma.module'
 import { MailModule } from './helpers/mail/mail.module'
 import { RateLimitModule } from './helpers/rate-limit/rate-limit.module'
+import { LocalizeModule } from './helpers/localize/localize.module'
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { RateLimitModule } from './helpers/rate-limit/rate-limit.module'
     }),
     MailModule,
     RateLimitModule,
+    LocalizeModule,
     PrismaModule,
     AuthModule,
     UserModule,

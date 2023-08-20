@@ -3,8 +3,14 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "assets": ["src/helpers/mail/templates/**/*.hbs"],
-    "watchAssets": true,
+    "assets": [
+      {
+        "include": "src/helpers/localize/lang/**/*.json",
+        "watchAssets": true,
+        "outDir": "dist/apps/i18n"
+      },
+      { "include": "src/helpers/mail/templates/**/*.hbs", "watchAssets": true }
+    ],
     "deleteOutDir": true
   }
 }
