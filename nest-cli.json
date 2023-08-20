@@ -5,9 +5,9 @@
   "compilerOptions": {
     "assets": [
       {
-        "include": "src/helpers/localize/lang/**/*.json",
+        "include": "src/lang/**/*.json",
         "watchAssets": true,
-        "outDir": "dist/apps/i18n"
+        "outDir": "dist/lang"
       },
       { "include": "src/helpers/mail/templates/**/*.hbs", "watchAssets": true }
     ],

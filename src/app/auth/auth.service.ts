@@ -12,7 +12,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import { v4 as uuidv4 } from 'uuid'
-import { I18nContext, I18nService } from 'nestjs-i18n'
+// import { I18nContext, I18nService } from 'nestjs-i18n'
 
 import { UuidStrategy } from './strategy'
 import { MailService } from '../../helpers/mail/mail.service'
@@ -20,12 +20,12 @@ import { MailService } from '../../helpers/mail/mail.service'
 @Injectable()
 export class AuthService {
   constructor(
+    // private readonly i18n: I18nService,
     private prisma: PrismaService,
     private jwt: JwtService,
     private config: ConfigService,
     private uuid: UuidStrategy,
     private mailService: MailService,
-    private readonly i18n: I18nService,
   ) {}
 
   async signup(dto: AuthSignUpDto) {
@@ -60,10 +60,12 @@ export class AuthService {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
           if (error.meta.target === 'accounts_email_key') {
-            // throw new ForbiddenException('email is already')
-            throw new ForbiddenException(
-              this.i18n.t('test.HELLO', { lang: I18nContext.current().lang }),
-            )
+            throw new ForbiddenException('email is already')
+            // throw new ForbiddenException(
+            //   this.i18n.t('auth.email-is-already', {
+            //     lang: I18nContext.current().lang,
+            //   }),
+            // )
           }
 
           throw new ForbiddenException(error.meta)

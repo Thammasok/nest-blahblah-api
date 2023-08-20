@@ -16,7 +16,7 @@ import { AcceptLanguageResolver, I18nModule, QueryResolver } from 'nestjs-i18n'
       },
       loaderOptions: {
         // path: path.join(__dirname, 'lang'),
-        path: process.cwd() + '/src/helpers/localize/lang',
+        path: process.cwd() + '/src/lang',
         watch: true,
       },
       resolvers: [
