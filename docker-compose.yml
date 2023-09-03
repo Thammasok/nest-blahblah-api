@@ -1,16 +1,16 @@
 version: '3'
 services:
-  postgres:
-    image: postgres
-    container_name: postgres
-    restart: always
-    # volumes:
-    #   - ./dockers/postgresql/data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
-    ports:
-      - 5432:5432
+  # postgres:
+  #   image: postgres
+  #   container_name: postgres
+  #   restart: always
+  #   # volumes:
+  #   #   - ./dockers/postgresql/data:/var/lib/postgresql/data
+  #   environment:
+  #     POSTGRES_USER: root
+  #     POSTGRES_PASSWORD: root
+  #   ports:
+  #     - 5432:5432
   mariadb:
     image: mariadb:10.9
     container_name: mariadb
