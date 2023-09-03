@@ -1,24 +1,15 @@
 version: '3'
 services:
-  dev-db:
+  database:
     image: postgres
     ports:
-      - 5434:5432
+      - 5432:5432
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
-      POSTGRES_DB: boilerplate
+      POSTGRES_DB: activities
     networks:
       - workspace
-  test-db:
-    image: postgres
-    ports:
-      - 5435:5432
-    environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: boilerplate
-    networks:
-      - workspace
+
 networks:
   workspace:
