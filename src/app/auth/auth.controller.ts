@@ -54,7 +54,6 @@ export class AuthController {
   }
 
   @Post('logout')
-  @UseGuards(AccessTokenGuard)
   @HttpCode(HttpStatus.OK)
   async logout(
     @GetCurrentUserId() userId: string,
@@ -62,6 +61,7 @@ export class AuthController {
   ) {
     await this.authService.logout(userId)
     res.clearCookie('refresh_token')
+    return { msg: 'logout is success' }
   }
 
   @UseGuards(RefreshTokenGuard)
