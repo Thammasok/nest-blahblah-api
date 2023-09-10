@@ -16,7 +16,7 @@ import {
   AuthVerifyMailDto,
 } from './dto'
 import { Tokens } from './types/tokens.type'
-import { RefreshTokenGuard } from '../../common/guards'
+import { AccessTokenGuard, RefreshTokenGuard } from '../../common/guards'
 import {
   GetCurrentUser,
   GetCurrentUserId,
@@ -54,6 +54,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @UseGuards(AccessTokenGuard)
   @HttpCode(HttpStatus.OK)
   async logout(
     @GetCurrentUserId() userId: string,
