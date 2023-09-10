@@ -26,7 +26,7 @@ export class AuthService {
     private mailService: MailService,
   ) {}
 
-  async signinLocal(dto: AuthSignInDto): Promise<Tokens> {
+  async signinLocal(dto: AuthSignInDto) {
     // find the user by email
     const account = await this.prisma.account.findUnique({
       where: {
@@ -44,7 +44,18 @@ export class AuthService {
 
     const tokens = await this.getTokens(account.uid, account.email)
     await this.updateRefreshTokenHash(account.uid, tokens.refresh_token)
-    return tokens
+    return {
+      token: {
+        ...tokens,
+      },
+      user: {
+        display_name: account.display_name,
+        email: account.email,
+        language: account.language,
+        date_format: account.date_format,
+        time_zone: account.time_zone,
+      },
+    }
   }
 
   async signupLocal(dto: AuthSignUpDto) {
@@ -72,7 +83,21 @@ export class AuthService {
         },
       })
 
-      return this.getTokens(account.uid, account.email)
+      const tokens = await this.getTokens(account.uid, account.email)
+      await this.updateRefreshTokenHash(account.uid, tokens.refresh_token)
+
+      return {
+        token: {
+          ...tokens,
+        },
+        user: {
+          display_name: account.display_name,
+          email: account.email,
+          language: account.language,
+          date_format: account.date_format,
+          time_zone: account.time_zone,
+        },
+      }
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {

@@ -34,15 +34,16 @@ export class AuthController {
   async signinLocal(
     @Body() dto: AuthSignInDto,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<Tokens> {
-    const { access_token, refresh_token } = await this.authService.signinLocal(
-      dto,
-    )
-    res.cookie('refresh_token', refresh_token, {
+  ) {
+    const user = await this.authService.signinLocal(dto)
+
+    // set cookie
+    res.cookie('refresh_token', user.token.refresh_token, {
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7d
       httpOnly: true,
     })
-    return { access_token, refresh_token }
+
+    return user
   }
 
   @Public()
