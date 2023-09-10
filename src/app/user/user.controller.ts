@@ -1,11 +1,11 @@
 import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common'
 import { User } from '@prisma/client'
 import { GetUser } from '../auth/decorator'
-import { JwtGuard } from '../auth/guard'
+import { AccessTokenGuard } from 'src/common/guards'
 import { EditUserDto } from './dto'
 import { UserService } from './user.service'
 
-@UseGuards(JwtGuard)
+@UseGuards(AccessTokenGuard)
 @Controller({ path: 'users', version: '1' })
 export class UserController {
   constructor(private userService: UserService) {}

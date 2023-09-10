@@ -5,7 +5,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt'
 import { JwtPayload } from '../types'
 
 @Injectable()
-export class AtStrategy extends PassportStrategy(Strategy, 'jwt') {
+export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -16,6 +16,6 @@ export class AtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
   validate(payload: JwtPayload) {
     return payload
-    //payload는 jwt token decode 한 것
-  } // req.user에 저장
+    // payload jwt token decode
+  } // req.user
 }

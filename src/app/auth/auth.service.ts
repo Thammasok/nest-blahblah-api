@@ -1,36 +1,57 @@
+import { HttpException, Injectable } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { v4 as uuidv4 } from 'uuid'
 import * as bcrypt from 'bcrypt'
 import dayjs from 'dayjs'
-import { ForbiddenException, Injectable } from '@nestjs/common'
-import { PrismaService } from '../../helpers/prisma/prisma.service'
+import { JwtService } from '@nestjs/jwt'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import {
   AuthResendVerifyDto,
   AuthSignInDto,
   AuthSignUpDto,
   AuthVerifyMailDto,
-} from './dto'
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
-import { JwtService } from '@nestjs/jwt'
-import { ConfigService } from '@nestjs/config'
-import { v4 as uuidv4 } from 'uuid'
-// import { I18nContext, I18nService } from 'nestjs-i18n'
-
-import { UuidStrategy } from './strategy'
+} from '../auth/dto'
+import { Tokens } from './types/tokens.type'
+import { UuidStrategy } from './strategies'
+import { PrismaService } from '../../helpers/prisma/prisma.service'
 import { MailService } from '../../helpers/mail/mail.service'
 
 @Injectable()
 export class AuthService {
   constructor(
-    // private readonly i18n: I18nService,
     private prisma: PrismaService,
-    private jwt: JwtService,
-    private config: ConfigService,
     private uuid: UuidStrategy,
+    private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
     private mailService: MailService,
   ) {}
 
-  async signup(dto: AuthSignUpDto) {
+  async signinLocal(dto: AuthSignInDto): Promise<Tokens> {
+    // find the user by email
+    const account = await this.prisma.account.findUnique({
+      where: {
+        email: dto.email,
+      },
+    })
+
+    // if user does not exist throw exception
+    if (!account) throw new HttpException('email or password incorrect', 404)
+
+    // compare password
+    const passwordMatches = await bcrypt.compare(dto.password, account.password)
+    if (!passwordMatches)
+      throw new HttpException('email or password incorrect', 404)
+
+    const tokens = await this.getTokens(account.uid, account.email)
+    await this.updateRefreshTokenHash(account.uid, tokens.refresh_token)
+    return tokens
+  }
+
+  async signupLocal(dto: AuthSignUpDto) {
     const uuid = await this.uuid.getUUID()
     const verify = await this.getVerifyCode()
+
+    const passwordHash = await this.hashData(dto.password)
 
     try {
       const initData = {
@@ -41,34 +62,32 @@ export class AuthService {
         ...verify,
       }
 
-      // generate the password hash
-      const saltRound = 8
-      const pwdHash = await bcrypt.hash(dto.password, saltRound)
-
       // save the new user in the db
       const account = await this.prisma.account.create({
         data: {
           display_name: dto.display_name,
           email: dto.email,
-          password: pwdHash,
+          password: passwordHash,
           ...initData,
         },
       })
 
-      return this.signToken(account.uid)
+      return this.getTokens(account.uid, account.email)
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
-          if (error.meta.target === 'accounts_email_key') {
-            throw new ForbiddenException('email is already')
-            // throw new ForbiddenException(
+          if (error.meta.target[0] === 'email') {
+            throw new HttpException('email is already', 409)
+            // throw new HttpException(
             //   this.i18n.t('auth.email-is-already', {
             //     lang: I18nContext.current().lang,
             //   }),
+            //   409,
             // )
           }
 
-          throw new ForbiddenException(error.meta)
+          // throw new ForbiddenException(error.meta)
+          throw new HttpException(error.meta, 403)
         }
       }
 
@@ -76,40 +95,77 @@ export class AuthService {
     }
   }
 
-  async signin(dto: AuthSignInDto) {
-    // find the user by email
-    const account = await this.prisma.account.findUnique({
+  async logout(userId: string) {
+    await this.prisma.account.update({
       where: {
-        email: dto.email,
+        uid: userId,
+      },
+      data: {
+        hashedRt: null,
       },
     })
-    // if user does not exist throw exception
-    if (!account) throw new ForbiddenException('email or password incorrect')
-
-    // compare password
-    const pwdMatches = await bcrypt.compare(dto.password, account.password)
-
-    // if password incorrect throw exception
-    if (!pwdMatches)
-      throw new ForbiddenException('email or password incorrect 1')
-
-    return this.signToken(account.uid)
   }
 
-  async signToken(uid: string): Promise<{ access_token: string }> {
-    const payload = {
-      sub: uid,
-    }
-    const secret = this.config.get('JWT_SECRET')
-
-    const token = await this.jwt.signAsync(payload, {
-      expiresIn: '5m',
-      secret: secret,
+  async refreshTokens(userId: string, refreshToken: string): Promise<Tokens> {
+    const user = await this.prisma.account.findUnique({
+      where: {
+        uid: userId,
+      },
     })
 
-    return {
-      access_token: token,
-    }
+    if (!user || !user.hashedRt) throw new HttpException('token not found', 404)
+    const rtmatches = await bcrypt.compare(refreshToken, user.hashedRt)
+
+    if (!rtmatches) throw new HttpException('token not found', 404)
+    const tokens = await this.getTokens(user.uid, user.email)
+    await this.updateRefreshTokenHash(user.uid, tokens.refresh_token)
+
+    return tokens
+  }
+
+  hashData(data: string) {
+    // const saltRound = 10
+    return bcrypt.hash(data, 10)
+  }
+
+  async getTokens(userId: string, email: string): Promise<Tokens> {
+    const [access_token, refresh_token] = await Promise.all([
+      this.jwtService.signAsync(
+        {
+          userId,
+          email,
+          sub: 'access_token',
+        },
+        {
+          secret: this.configService.get<string>('ACCESS_TOKEN_SECRET'),
+          expiresIn: '1h',
+        },
+      ),
+      this.jwtService.signAsync(
+        {
+          userId,
+          email,
+          sub: 'refresh_token',
+        },
+        {
+          secret: this.configService.get<string>('REFRESH_TOKEN_SECRET'),
+          expiresIn: '7d',
+        },
+      ),
+    ])
+    return { access_token, refresh_token }
+  }
+
+  async updateRefreshTokenHash(userId: string, rt: string) {
+    const hash = await this.hashData(rt)
+    await this.prisma.account.update({
+      where: {
+        uid: userId,
+      },
+      data: {
+        hashedRt: hash,
+      },
+    })
   }
 
   async resendVerifyMail(dto: AuthResendVerifyDto) {
@@ -117,14 +173,14 @@ export class AuthService {
 
     this.mailService.sendMail({
       to: dto.email,
-      from: `"${this.config.get('MAIL_DEFAULT_FROM_NANE')}" <${this.config.get(
-        'MAIL_DEFAULT_FROM_EMAIL',
-      )}>`,
+      from: `"${this.configService.get<string>(
+        'MAIL_DEFAULT_FROM_NANE',
+      )}" <${this.configService.get<string>('MAIL_DEFAULT_FROM_EMAIL')}>`,
       subject: 'Please verify e-mail address for example.com',
       template: 'auth/email-verify',
       context: {
         email: dto.email,
-        verify_url: this.config.get('MAIL_VERIFY_URL'),
+        verify_url: this.configService.get<string>('MAIL_VERIFY_URL'),
         verify_token: verify.verify_token,
       },
     })
@@ -140,8 +196,9 @@ export class AuthService {
 
     if (!account)
       if (!account)
-        throw new ForbiddenException(
+        throw new HttpException(
           'cannot send verify to your email, plase try again',
+          403,
         )
 
     return {
@@ -163,7 +220,7 @@ export class AuthService {
     })
 
     if (checkVerify === 0)
-      throw new ForbiddenException('email, token or date expired is incorrect')
+      throw new HttpException('email, token or date expired is incorrect', 403)
 
     const account = await this.prisma.account.update({
       where: {
@@ -178,7 +235,7 @@ export class AuthService {
 
     if (!account)
       if (!account)
-        throw new ForbiddenException('cannot verify email, plase try again')
+        throw new HttpException('cannot verify email, plase try again', 403)
 
     return {
       msg: 'verify your email completed',

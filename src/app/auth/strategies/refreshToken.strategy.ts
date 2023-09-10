@@ -6,7 +6,10 @@ import { ForbiddenException, Injectable } from '@nestjs/common'
 import { JwtPayload, JwtPayloadWithRt } from '../types'
 
 @Injectable()
-export class RtStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
+export class RefreshTokenStrategy extends PassportStrategy(
+  Strategy,
+  'jwt-refresh',
+) {
   constructor(configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -16,7 +19,7 @@ export class RtStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
       ]),
       ignoreExpiration: false, // default
       secretOrKey: configService.get<string>('auth.refresh_token_secret'),
-      passReqToCallback: true, // req에 접근이 가능하게 되어 passport인증 시 밑에서 사용됨
+      passReqToCallback: true, // The req becomes accessible and is used below when authenticating the passport.
     })
   }
 
@@ -29,6 +32,6 @@ export class RtStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
       refreshToken,
     }
   }
-  // 이 부분을 왜 이렇게 했냐면 /auth/refresh 할 때 get-current-user decorator에서 refresh-token을 받아와야함
-  // 그 다음 refresh토큰과 hashed토큰을 비교해서 refresh해줌
+  // The reason why I did this part is that when doing /auth/refresh, I need to get a refresh-token from the get-current-user decorator.
+  // Then, refresh is performed by comparing the refresh token and the hashed token.
 }

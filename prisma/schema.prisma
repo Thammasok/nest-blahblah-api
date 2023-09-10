@@ -16,6 +16,7 @@ model Account {
   display_name   String          @db.VarChar(255)
   email          String          @unique @db.VarChar(255)
   password       String          @db.VarChar(255)
+  hashedRt       String?         @db.VarChar(255)
   language       String?         @default("en-EN") @db.VarChar(5)
   date_format    String?         @default("dd-mm-yyyy") @db.VarChar(10)
   time_zone      String?         @default("+07:00") @db.VarChar(50)

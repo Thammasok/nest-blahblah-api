@@ -1,6 +1,9 @@
-import { Module } from '@nestjs/common'
+import { Module, ValidationPipe } from '@nestjs/common'
+import { APP_GUARD, APP_PIPE } from '@nestjs/core'
 import { ConfigModule } from '@nestjs/config'
+import configuration from './config/configuration'
 
+import { AccessTokenGuard } from './common/guards'
 import { AuthModule } from './app/auth/auth.module'
 import { UserModule } from './app/user/user.module'
 import { BookmarkModule } from './app/bookmark/bookmark.module'
@@ -13,6 +16,9 @@ import { LocalizeModule } from './helpers/localize/localize.module'
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: [process.env.NODE_ENV ? 'dev' : '.env'],
+      ignoreEnvFile: process.env.NODE_ENV === 'prod',
+      load: [configuration],
     }),
     MailModule,
     RateLimitModule,
@@ -21,6 +27,16 @@ import { LocalizeModule } from './helpers/localize/localize.module'
     AuthModule,
     UserModule,
     BookmarkModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AccessTokenGuard,
+    },
+    {
+      provide: APP_PIPE,
+      useClass: ValidationPipe,
+    },
   ],
 })
 export class AppModule {}
