@@ -11,7 +11,7 @@ export class UuidStrategy {
 
     const account = await this.prisma.account.count({
       where: {
-        uid: uuid,
+        uuid: uuid,
       },
     })
 

@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common'
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { v4 as uuidv4 } from 'uuid'
 import * as bcrypt from 'bcrypt'
@@ -35,74 +35,61 @@ export class AuthService {
     })
 
     // if user does not exist throw exception
-    if (!account) throw new HttpException('email or password incorrect', 404)
+    if (!account)
+      throw new HttpException(
+        'email or password incorrect',
+        HttpStatus.NOT_FOUND,
+      )
 
     // compare password
     const passwordMatches = await bcrypt.compare(dto.password, account.password)
     if (!passwordMatches)
-      throw new HttpException('email or password incorrect', 404)
+      throw new HttpException(
+        'email or password incorrect',
+        HttpStatus.NOT_FOUND,
+      )
 
-    const tokens = await this.getTokens(account.uid, account.email)
-    await this.updateRefreshTokenHash(account.uid, tokens.refresh_token)
+    const tokens = await this.getTokens(account.accountUuid)
+    const settings = await this.getAccountSettting(account.id)
+    await this.updateRefreshTokenHash(account.id, tokens.refresh_token)
+
     return {
-      token: {
-        ...tokens,
-      },
-      user: {
-        display_name: account.display_name,
-        email: account.email,
-        language: account.language,
-        date_format: account.date_format,
-        time_zone: account.time_zone,
-      },
+      tokens,
+      account,
+      settings,
     }
   }
 
   async signupLocal(dto: AuthSignUpDto) {
     const uuid = await this.uuid.getUUID()
-    const verify = await this.getVerifyCode()
-
     const passwordHash = await this.hashData(dto.password)
 
     try {
-      const initData = {
-        uid: uuid,
-        language: 'en-EN',
-        date_format: 'dd-mm-yyyy',
-        time_zone: '+07:00',
-        ...verify,
-      }
-
-      // save the new user in the db
+      // save the new account in the db
       const account = await this.prisma.account.create({
         data: {
-          display_name: dto.display_name,
+          accountUuid: uuid,
+          displayName: dto.display_name,
           email: dto.email,
           password: passwordHash,
-          ...initData,
         },
       })
 
-      const tokens = await this.getTokens(account.uid, account.email)
-      await this.updateRefreshTokenHash(account.uid, tokens.refresh_token)
+      await this.sendVerifyMail({ email: dto.email })
+      const settings = await this.updateAccountSetting(account.id, null)
+      const tokens = await this.getTokens(account.accountUuid)
+      await this.updateRefreshTokenHash(account.id, tokens.refresh_token)
 
       return {
-        token: {
-          ...tokens,
-        },
-        user: {
-          display_name: account.display_name,
-          email: account.email,
-          language: account.language,
-          date_format: account.date_format,
-          time_zone: account.time_zone,
-        },
+        tokens,
+        account,
+        settings,
       }
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
           if (error.meta.target[0] === 'email') {
-            throw new HttpException('email is already', 409)
+            throw new HttpException('email is already', HttpStatus.CONFLICT)
             // throw new HttpException(
             //   this.i18n.t('auth.email-is-already', {
             //     lang: I18nContext.current().lang,
@@ -131,19 +118,88 @@ export class AuthService {
     })
   }
 
-  async refreshTokens(userId: string, refreshToken: string): Promise<Tokens> {
-    const user = await this.prisma.account.findUnique({
+  async getAccountByAccountUuid(accountUuid: string) {
+    const account = await this.prisma.account.findFirst({
       where: {
-        uid: userId,
+        accountUuid,
+        isRemove: false,
       },
     })
 
-    if (!user || !user.hashedRt) throw new HttpException('token not found', 404)
-    const rtmatches = await bcrypt.compare(refreshToken, user.hashedRt)
+    if (!account)
+      throw new HttpException('account not found', HttpStatus.NOT_FOUND)
 
-    if (!rtmatches) throw new HttpException('token not found', 404)
-    const tokens = await this.getTokens(user.uid, user.email)
-    await this.updateRefreshTokenHash(user.uid, tokens.refresh_token)
+    return account
+  }
+
+  async getAccountSettting(accountId: bigint) {
+    const accountSetting = await this.prisma.accountSetting.findFirst({
+      where: {
+        accountId,
+      },
+    })
+
+    if (!accountSetting) return {}
+
+    return accountSetting
+  }
+
+  async updateAccountSetting(accountId: bigint, setting: object | null) {
+    const dataSetting = setting || {
+      language: 'en-EN',
+      dateFormat: 'dd-mm-yyyy',
+      timeZone: '+07:00',
+    }
+
+    const accountSetting = await this.prisma.accountSetting.upsert({
+      where: {
+        accountId,
+      },
+      update: dataSetting,
+      create: {
+        accountId,
+        language: 'en-EN',
+        dateFormat: 'dd-mm-yyyy',
+        timeZone: '+07:00',
+      },
+    })
+
+    if (!accountSetting) {
+      return 'success'
+    } else {
+      return 'cannnot update setting'
+    }
+  }
+
+  async refreshTokens(
+    accountId: bigint,
+    refreshToken: string,
+  ): Promise<Tokens> {
+    const account = await this.prisma.account.findUnique({
+      where: {
+        id: accountId,
+      },
+    })
+    const accountToken = await this.prisma.accountToken.findUnique({
+      where: {
+        accountId,
+      },
+    })
+
+    if ((!account && !accountToken) || !accountToken.refreshToken)
+      throw new HttpException('token not found', HttpStatus.NOT_FOUND)
+    const refreshTokenMatches = await bcrypt.compare(
+      refreshToken,
+      accountToken.refreshToken,
+    )
+
+    if (!refreshTokenMatches)
+      throw new HttpException('token not found', HttpStatus.NOT_FOUND)
+    const tokens = await this.getTokens(account.accountUuid)
+    await this.updateRefreshTokenHash(
+      accountToken.accountId,
+      tokens.refresh_token,
+    )
 
     return tokens
   }
@@ -153,12 +209,11 @@ export class AuthService {
     return bcrypt.hash(data, 10)
   }
 
-  async getTokens(userId: string, email: string): Promise<Tokens> {
+  async getTokens(accountUuid: string): Promise<Tokens> {
     const [access_token, refresh_token] = await Promise.all([
       this.jwtService.signAsync(
         {
-          userId,
-          email,
+          accountUuid,
           sub: 'access_token',
         },
         {
@@ -168,8 +223,7 @@ export class AuthService {
       ),
       this.jwtService.signAsync(
         {
-          userId,
-          email,
+          accountUuid,
           sub: 'refresh_token',
         },
         {
@@ -181,86 +235,114 @@ export class AuthService {
     return { access_token, refresh_token }
   }
 
-  async updateRefreshTokenHash(userId: string, rt: string) {
+  async updateRefreshTokenHash(accountId: bigint, rt: string) {
     const hash = await this.hashData(rt)
-    await this.prisma.account.update({
+    await this.prisma.accountToken.update({
       where: {
-        uid: userId,
+        accountId,
       },
       data: {
-        hashedRt: hash,
+        refreshToken: hash,
       },
     })
   }
 
-  async resendVerifyMail(dto: AuthResendVerifyDto) {
-    const verify = await this.getVerifyCode()
-
-    this.mailService.sendMail({
-      to: dto.email,
-      from: `"${this.configService.get<string>(
-        'MAIL_DEFAULT_FROM_NANE',
-      )}" <${this.configService.get<string>('MAIL_DEFAULT_FROM_EMAIL')}>`,
-      subject: 'Please verify e-mail address for example.com',
-      template: 'auth/email-verify',
-      context: {
-        email: dto.email,
-        verify_url: this.configService.get<string>('MAIL_VERIFY_URL'),
-        verify_token: verify.verify_token,
-      },
-    })
-
-    const account = await this.prisma.account.update({
+  async sendVerifyMail(dto: AuthResendVerifyDto) {
+    const account = await this.prisma.account.findUnique({
       where: {
         email: dto.email,
       },
-      data: {
-        ...verify,
-      },
     })
 
-    if (!account)
-      if (!account)
+    if (account) {
+      const verify = await this.getVerifyCode()
+
+      this.mailService.sendMail({
+        to: dto.email,
+        from: `"${this.configService.get<string>(
+          'MAIL_DEFAULT_FROM_NANE',
+        )}" <${this.configService.get<string>('MAIL_DEFAULT_FROM_EMAIL')}>`,
+        subject: 'Please verify e-mail address for example.com',
+        template: 'auth/email-verify',
+        context: {
+          email: dto.email,
+          verify_url: this.configService.get<string>('MAIL_VERIFY_URL'),
+          verifyToken: verify.verifyToken,
+        },
+      })
+
+      const accountVerify = await this.prisma.accountVerify.update({
+        where: {
+          accountId: account.id,
+        },
+        data: {
+          token: verify.verifyToken,
+          expiredAt: verify.verifyExpired,
+        },
+      })
+
+      if (!accountVerify)
         throw new HttpException(
           'cannot send verify to your email, plase try again',
           403,
         )
 
-    return {
-      msg: 'send verify to your email completed',
+      return {
+        msg: 'send verify to your email completed',
+      }
     }
   }
 
   async verifyMail(dto: AuthVerifyMailDto) {
     const now = dayjs().format()
 
-    const checkVerify = await this.prisma.account.count({
+    const accountInfo = await this.prisma.account.findUnique({
       where: {
         email: dto.email,
-        verify_token: dto.token,
-        verify_expired: {
+      },
+    })
+
+    if (!accountInfo)
+      throw new HttpException(
+        'this token is incorrect or expired',
+        HttpStatus.FORBIDDEN,
+      )
+
+    const checkVerify = await this.prisma.accountVerify.count({
+      where: {
+        accountId: accountInfo.id,
+        token: dto.token,
+        expiredAt: {
           gte: now,
         },
       },
     })
 
     if (checkVerify === 0)
-      throw new HttpException('email, token or date expired is incorrect', 403)
+      throw new HttpException(
+        'email, token or date expired is incorrect',
+        HttpStatus.FORBIDDEN,
+      )
 
-    const account = await this.prisma.account.update({
+    // Update Verify
+    this.prisma.account.update({
       where: {
-        email: dto.email,
+        id: accountInfo.id,
       },
       data: {
-        verify_token: null,
-        verify_expired: null,
-        is_verify: true,
+        isVerify: true,
       },
     })
 
-    if (!account)
-      if (!account)
-        throw new HttpException('cannot verify email, plase try again', 403)
+    // Update Verify at
+    this.prisma.accountVerify.update({
+      where: {
+        accountId: accountInfo.id,
+      },
+      data: {
+        verifyAt: dayjs().format('YYYY-MM-DDTHH:mm:ss'),
+      },
+    })
 
     return {
       msg: 'verify your email completed',
@@ -268,17 +350,17 @@ export class AuthService {
   }
 
   async getVerifyCode(): Promise<{
-    verify_token: string
-    verify_expired: string
+    verifyToken: string
+    verifyExpired: string
   }> {
     const token = uuidv4()
 
     //dayjs().format()// => current date in ISO8601, without fraction seconds e.g. '2020-04-02T08:02:17-05:00'
-    const now = dayjs().add(1, 'day').format()
+    const expiredAt = dayjs().add(1, 'day').format('YYYY-MM-DDTHH:mm:ss')
 
     return {
-      verify_token: token,
-      verify_expired: now,
+      verifyToken: token,
+      verifyExpired: expiredAt,
     }
   }
 }

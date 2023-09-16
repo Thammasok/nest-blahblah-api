@@ -11,6 +11,8 @@ import { PrismaModule } from './helpers/prisma/prisma.module'
 import { MailModule } from './helpers/mail/mail.module'
 import { RateLimitModule } from './helpers/rate-limit/rate-limit.module'
 import { LocalizeModule } from './helpers/localize/localize.module'
+import { WalletModule } from './app/wallet/wallet.module'
+import { WalletCategoryModule } from './app/wallet-category/wallet-category.module';
 
 @Module({
   imports: [
@@ -27,6 +29,11 @@ import { LocalizeModule } from './helpers/localize/localize.module'
     AuthModule,
     UserModule,
     BookmarkModule,
+
+    // Memoney
+    WalletModule,
+
+    WalletCategoryModule,
   ],
   providers: [
     {
