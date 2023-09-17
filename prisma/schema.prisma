@@ -24,11 +24,11 @@ model Account {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  Wallet           Wallet[]
-  WalletCategories WalletCategories[]
   AccountVerify    AccountVerify?
   AccountToken     AccountToken?
   AccountSetting   AccountSetting?
+  Wallet           Wallet[]
+  WalletCategories WalletCategories[]
 
   // Mapping
   @@map("account")
