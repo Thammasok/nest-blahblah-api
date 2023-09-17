@@ -271,6 +271,7 @@ export class AuthService {
     const account = await this.prisma.account.findUnique({
       where: {
         email: dto.email,
+        isVerify: false,
       },
     })
 
@@ -287,27 +288,40 @@ export class AuthService {
         context: {
           email: dto.email,
           verifyUrl: this.configService.get<string>('MAIL_VERIFY_URL'),
-          verifyToken: verify.verifyToken,
+          verifyToken: verify.verifyExpired,
         },
       })
 
-      const accountVerify = await this.prisma.accountVerify.create({
-        data: {
+      await this.prisma.accountVerify.upsert({
+        where: {
           accountId: account.id,
+        },
+        create: {
+          accountId: account.id,
+          token: verify.verifyToken,
+          expiredAt: verify.verifyExpired,
+        },
+        update: {
           token: verify.verifyToken,
           expiredAt: verify.verifyExpired,
         },
       })
 
-      if (!accountVerify)
-        throw new HttpException(
-          'cannot send verify to your email, plase try again',
-          403,
-        )
+      // if (!accountVerify)
+      //   throw new HttpException(
+      //     'cannot send verify to your email, plase try again',
+      //     HttpStatus.FORBIDDEN,
+      //   )
 
       return {
         msg: 'send verify to your email completed',
       }
+    } else {
+      // cannot send verify to your email, plase try again
+      throw new HttpException(
+        'email not found or may be verified',
+        HttpStatus.FORBIDDEN,
+      )
     }
   }
 
@@ -317,60 +331,60 @@ export class AuthService {
     const accountInfo = await this.prisma.account.findUnique({
       where: {
         email: dto.email,
+        isVerify: false,
       },
     })
 
-    if (!accountInfo)
-      throw new HttpException(
-        'this token is incorrect or expired',
-        HttpStatus.FORBIDDEN,
-      )
-
-    const checkVerify = await this.prisma.accountVerify.count({
-      where: {
-        accountId: accountInfo.id,
-        token: dto.token,
-        expiredAt: {
-          gte: now,
+    if (accountInfo) {
+      const checkVerify = await this.prisma.accountVerify.count({
+        where: {
+          accountId: accountInfo.id,
+          token: dto.token,
+          expiredAt: {
+            gte: now,
+          },
         },
-      },
-    })
+      })
 
-    if (checkVerify === 0)
+      if (checkVerify === 0)
+        throw new HttpException(
+          'token, email or date expired is incorrect',
+          HttpStatus.FORBIDDEN,
+        )
+
+      await Promise.all([
+        // Update Verify at
+        this.prisma.account.update({
+          where: {
+            id: accountInfo.id,
+          },
+          data: {
+            isVerify: true,
+          },
+        }),
+        // Update Verify
+        this.prisma.accountVerify.update({
+          where: {
+            accountId: accountInfo.id,
+          },
+          data: {
+            verifyAt: dayjs().format(),
+          },
+        }),
+      ])
+
+      return {
+        msg: 'verify your email completed',
+      }
+    } else {
       throw new HttpException(
-        'email, token or date expired is incorrect',
+        'token is incorrect or expired',
         HttpStatus.FORBIDDEN,
       )
-
-    // Update Verify
-    this.prisma.account.update({
-      where: {
-        id: accountInfo.id,
-      },
-      data: {
-        isVerify: true,
-      },
-    })
-
-    // Update Verify at
-    this.prisma.accountVerify.update({
-      where: {
-        accountId: accountInfo.id,
-      },
-      data: {
-        verifyAt: dayjs().format(),
-      },
-    })
-
-    return {
-      msg: 'verify your email completed',
     }
   }
 
-  async getVerifyCode(): Promise<{
-    verifyToken: string
-    verifyExpired: string
-  }> {
+  async getVerifyCode() {
     const token = uuidv4()
 
     //dayjs().format()// => current date in ISO8601, without fraction seconds e.g. '2020-04-02T08:02:17-05:00'
