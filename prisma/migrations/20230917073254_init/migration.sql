@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "account" (
-    "id" BIGSERIAL NOT NULL,
+    "id" SERIAL NOT NULL,
     "accountUuid" VARCHAR(128) NOT NULL,
     "accountName" VARCHAR(128),
     "displayName" VARCHAR(255) NOT NULL,
@@ -16,10 +16,10 @@ CREATE TABLE "account" (
 
 -- CreateTable
 CREATE TABLE "account_verify" (
-    "accountId" BIGINT NOT NULL,
+    "accountId" INTEGER NOT NULL,
     "token" VARCHAR(255) NOT NULL,
-    "expiredAt" TIMESTAMP NOT NULL,
-    "verifyAt" TIMESTAMP,
+    "expiredAt" TIMESTAMP(3) NOT NULL,
+    "verifyAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -28,12 +28,12 @@ CREATE TABLE "account_verify" (
 
 -- CreateTable
 CREATE TABLE "account_token" (
-    "accountId" BIGINT NOT NULL,
+    "accountId" INTEGER NOT NULL,
     "refreshToken" TEXT NOT NULL,
-    "expiredAt" TIMESTAMP(3) NOT NULL,
-    "scopes" VARCHAR(255) NOT NULL,
-    "userAgent" VARCHAR(128) NOT NULL,
-    "ipAddress" VARCHAR(64) NOT NULL,
+    "expiredAt" TIMESTAMP(3),
+    "scopes" VARCHAR(255),
+    "userAgent" VARCHAR(128),
+    "ipAddress" VARCHAR(64),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -42,19 +42,21 @@ CREATE TABLE "account_token" (
 
 -- CreateTable
 CREATE TABLE "account_setting" (
-    "accountId" BIGINT NOT NULL,
+    "accountId" INTEGER NOT NULL,
     "language" VARCHAR(5) DEFAULT 'en-EN',
     "dateFormat" VARCHAR(10) DEFAULT 'dd-mm-yyyy',
     "timeZone" VARCHAR(50) DEFAULT '+07:00',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "account_setting_pkey" PRIMARY KEY ("accountId")
 );
 
 -- CreateTable
 CREATE TABLE "wallet" (
-    "id" BIGSERIAL NOT NULL,
-    "accountId" BIGINT NOT NULL,
-    "categoryId" BIGINT NOT NULL,
+    "id" SERIAL NOT NULL,
+    "accountId" INTEGER NOT NULL,
+    "categoryId" INTEGER NOT NULL,
     "name" VARCHAR(255) NOT NULL,
     "currencyId" INTEGER NOT NULL,
     "excludeFromTotal" BOOLEAN NOT NULL DEFAULT false,
@@ -67,8 +69,8 @@ CREATE TABLE "wallet" (
 
 -- CreateTable
 CREATE TABLE "wallet_categories" (
-    "id" BIGSERIAL NOT NULL,
-    "accountId" BIGINT NOT NULL,
+    "id" SERIAL NOT NULL,
+    "accountId" INTEGER NOT NULL,
     "name" VARCHAR(50) NOT NULL,
     "isRemove" BOOLEAN DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

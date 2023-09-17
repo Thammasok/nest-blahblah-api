@@ -17,8 +17,8 @@ import {
 } from './dto'
 import { RefreshTokenGuard } from '../../common/guards'
 import {
-  GetCurrentUser,
-  GetCurrentUserId,
+  GetCurrentAccountId,
+  GetCurrentAccount,
   Public,
 } from '../../common/decorators'
 import { AuthService } from './auth.service'
@@ -34,10 +34,10 @@ export class AuthController {
     @Body() dto: AuthSignInDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const user = await this.authService.signinLocal(dto)
+    const user = await this.authService.signin(dto)
 
     // set cookie
-    res.cookie('refresh_token', user.token.refresh_token, {
+    res.cookie('refresh_token', user.tokens.refresh_token, {
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7d
       httpOnly: true,
     })
@@ -49,14 +49,14 @@ export class AuthController {
   @Post('signup')
   @HttpCode(HttpStatus.OK)
   async signupLocal(@Body() dto: AuthSignUpDto) {
-    const user = await this.authService.signupLocal(dto)
+    const user = await this.authService.signup(dto)
     return user
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(
-    @GetCurrentUserId() accountId: string,
+    @GetCurrentAccountId() accountId: number,
     @Res({ passthrough: true }) res: Response,
   ) {
     await this.authService.logout(accountId)
@@ -68,8 +68,8 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refreshTokens(
-    @GetCurrentUserId() accountId: string,
-    @GetCurrentUser('refreshToken') refreshToken: string,
+    @GetCurrentAccountId() accountId: number,
+    @GetCurrentAccount('refreshToken') refreshToken: string,
     @Res({ passthrough: true }) res: Response,
   ) {
     const { access_token, refresh_token } =

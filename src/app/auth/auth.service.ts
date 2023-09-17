@@ -26,7 +26,7 @@ export class AuthService {
     private mailService: MailService,
   ) {}
 
-  async signinLocal(dto: AuthSignInDto) {
+  async signin(dto: AuthSignInDto) {
     // find the user by email
     const account = await this.prisma.account.findUnique({
       where: {
@@ -55,13 +55,18 @@ export class AuthService {
 
     return {
       tokens,
-      account,
+      account: {
+        accountName: account.accountName,
+        displayName: account.displayName,
+        email: account.email,
+        isVerify: account.isVerify,
+      },
       settings,
     }
   }
 
-  async signupLocal(dto: AuthSignUpDto) {
-    const uuid = await this.uuid.getUUID()
+  async signup(dto: AuthSignUpDto) {
+    const uuid = await this.uuid.getAccountUUID()
     const passwordHash = await this.hashData(dto.password)
 
     try {
@@ -82,7 +87,12 @@ export class AuthService {
 
       return {
         tokens,
-        account,
+        account: {
+          accountName: account.accountName,
+          displayName: account.displayName,
+          email: account.email,
+          isVerify: account.isVerify,
+        },
         settings,
       }
     } catch (error) {
@@ -107,13 +117,10 @@ export class AuthService {
     }
   }
 
-  async logout(userId: string) {
-    await this.prisma.account.update({
+  async logout(accountId: number) {
+    await this.prisma.accountToken.delete({
       where: {
-        uid: userId,
-      },
-      data: {
-        hashedRt: null,
+        accountId,
       },
     })
   }
@@ -132,7 +139,7 @@ export class AuthService {
     return account
   }
 
-  async getAccountSettting(accountId: bigint) {
+  async getAccountSettting(accountId: number) {
     const accountSetting = await this.prisma.accountSetting.findFirst({
       where: {
         accountId,
@@ -141,10 +148,12 @@ export class AuthService {
 
     if (!accountSetting) return {}
 
+    delete accountSetting.accountId
+
     return accountSetting
   }
 
-  async updateAccountSetting(accountId: bigint, setting: object | null) {
+  async updateAccountSetting(accountId: number, setting: object | null) {
     const dataSetting = setting || {
       language: 'en-EN',
       dateFormat: 'dd-mm-yyyy',
@@ -164,15 +173,41 @@ export class AuthService {
       },
     })
 
-    if (!accountSetting) {
-      return 'success'
-    } else {
-      return 'cannnot update setting'
-    }
+    if (!accountSetting) return {}
+
+    delete accountSetting.accountId
+
+    return accountSetting
+  }
+
+  async getTokens(accountUuid: string): Promise<Tokens> {
+    const [access_token, refresh_token] = await Promise.all([
+      this.jwtService.signAsync(
+        {
+          accountId: accountUuid,
+          sub: 'access_token',
+        },
+        {
+          secret: this.configService.get<string>('ACCESS_TOKEN_SECRET'),
+          expiresIn: '1h',
+        },
+      ),
+      this.jwtService.signAsync(
+        {
+          accountId: accountUuid,
+          sub: 'refresh_token',
+        },
+        {
+          secret: this.configService.get<string>('REFRESH_TOKEN_SECRET'),
+          expiresIn: '7d',
+        },
+      ),
+    ])
+    return { access_token, refresh_token }
   }
 
   async refreshTokens(
-    accountId: bigint,
+    accountId: number,
     refreshToken: string,
   ): Promise<Tokens> {
     const account = await this.prisma.account.findUnique({
@@ -186,15 +221,23 @@ export class AuthService {
       },
     })
 
-    if ((!account && !accountToken) || !accountToken.refreshToken)
-      throw new HttpException('token not found', HttpStatus.NOT_FOUND)
-    const refreshTokenMatches = await bcrypt.compare(
-      refreshToken,
+    if (!accountToken || !accountToken.refreshToken)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED)
+
+    const refreshTokenFromDb = await this.jwtService.verify(
       accountToken.refreshToken,
+      {
+        secret: this.configService.get<string>('REFRESH_TOKEN_SECRET'),
+      },
     )
 
-    if (!refreshTokenMatches)
-      throw new HttpException('token not found', HttpStatus.NOT_FOUND)
+    const refreshTokenFromReq = await this.jwtService.verify(refreshToken, {
+      secret: this.configService.get<string>('REFRESH_TOKEN_SECRET'),
+    })
+
+    if (refreshTokenFromDb.accountId !== refreshTokenFromReq.accountId)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED)
+
     const tokens = await this.getTokens(account.accountUuid)
     await this.updateRefreshTokenHash(
       accountToken.accountId,
@@ -209,40 +252,17 @@ export class AuthService {
     return bcrypt.hash(data, 10)
   }
 
-  async getTokens(accountUuid: string): Promise<Tokens> {
-    const [access_token, refresh_token] = await Promise.all([
-      this.jwtService.signAsync(
-        {
-          accountUuid,
-          sub: 'access_token',
-        },
-        {
-          secret: this.configService.get<string>('ACCESS_TOKEN_SECRET'),
-          expiresIn: '1h',
-        },
-      ),
-      this.jwtService.signAsync(
-        {
-          accountUuid,
-          sub: 'refresh_token',
-        },
-        {
-          secret: this.configService.get<string>('REFRESH_TOKEN_SECRET'),
-          expiresIn: '7d',
-        },
-      ),
-    ])
-    return { access_token, refresh_token }
-  }
-
-  async updateRefreshTokenHash(accountId: bigint, rt: string) {
-    const hash = await this.hashData(rt)
-    await this.prisma.accountToken.update({
+  async updateRefreshTokenHash(accountId: number, refreshToken: string) {
+    await this.prisma.accountToken.upsert({
       where: {
         accountId,
       },
-      data: {
-        refreshToken: hash,
+      create: {
+        accountId,
+        refreshToken,
+      },
+      update: {
+        refreshToken,
       },
     })
   }
@@ -266,16 +286,14 @@ export class AuthService {
         template: 'auth/email-verify',
         context: {
           email: dto.email,
-          verify_url: this.configService.get<string>('MAIL_VERIFY_URL'),
+          verifyUrl: this.configService.get<string>('MAIL_VERIFY_URL'),
           verifyToken: verify.verifyToken,
         },
       })
 
-      const accountVerify = await this.prisma.accountVerify.update({
-        where: {
-          accountId: account.id,
-        },
+      const accountVerify = await this.prisma.accountVerify.create({
         data: {
+          accountId: account.id,
           token: verify.verifyToken,
           expiredAt: verify.verifyExpired,
         },
@@ -340,7 +358,7 @@ export class AuthService {
         accountId: accountInfo.id,
       },
       data: {
-        verifyAt: dayjs().format('YYYY-MM-DDTHH:mm:ss'),
+        verifyAt: dayjs().format(),
       },
     })
 
@@ -356,7 +374,7 @@ export class AuthService {
     const token = uuidv4()
 
     //dayjs().format()// => current date in ISO8601, without fraction seconds e.g. '2020-04-02T08:02:17-05:00'
-    const expiredAt = dayjs().add(1, 'day').format('YYYY-MM-DDTHH:mm:ss')
+    const expiredAt = dayjs().add(1, 'day').format()
 
     return {
       verifyToken: token,

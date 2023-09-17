@@ -12,7 +12,7 @@ datasource db {
 
 // ----- START ACCOUNT SCHEMA ----
 model Account {
-  id          BigInt   @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   accountUuid String   @unique @db.VarChar(128)
   accountName String?  @unique @db.VarChar(128)
   displayName String   @db.VarChar(255)
@@ -26,19 +26,19 @@ model Account {
   // Relations
   Wallet           Wallet[]
   WalletCategories WalletCategories[]
-  AccountVerify    AccountVerify[]
-  AccountToken     AccountToken[]
-  AccountSetting   AccountSetting[]
+  AccountVerify    AccountVerify?
+  AccountToken     AccountToken?
+  AccountSetting   AccountSetting?
 
   // Mapping
   @@map("account")
 }
 
 model AccountVerify {
-  accountId BigInt    @id
+  accountId Int       @id
   token     String    @db.VarChar(255)
-  expiredAt DateTime  @db.Timestamp()
-  verifyAt  DateTime? @db.Timestamp()
+  expiredAt DateTime
+  verifyAt  DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -50,14 +50,14 @@ model AccountVerify {
 }
 
 model AccountToken {
-  accountId    BigInt   @id
-  refreshToken String   @db.Text
-  expiredAt    DateTime
-  scopes       String   @db.VarChar(255)
-  userAgent    String   @db.VarChar(128)
-  ipAddress    String   @db.VarChar(64)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  accountId    Int       @id
+  refreshToken String    @db.Text
+  expiredAt    DateTime?
+  scopes       String?   @db.VarChar(255)
+  userAgent    String?   @db.VarChar(128)
+  ipAddress    String?   @db.VarChar(64)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   // Releations
   Account Account @relation(fields: [accountId], references: [id])
@@ -67,10 +67,12 @@ model AccountToken {
 }
 
 model AccountSetting {
-  accountId  BigInt  @id
-  language   String? @default("en-EN") @db.VarChar(5)
-  dateFormat String? @default("dd-mm-yyyy") @db.VarChar(10)
-  timeZone   String? @default("+07:00") @db.VarChar(50)
+  accountId  Int      @id
+  language   String?  @default("en-EN") @db.VarChar(5)
+  dateFormat String?  @default("dd-mm-yyyy") @db.VarChar(10)
+  timeZone   String?  @default("+07:00") @db.VarChar(50)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   // Releations
   Account Account @relation(fields: [accountId], references: [id])
@@ -81,9 +83,9 @@ model AccountSetting {
 
 // ----- START WALLET SCHEMA ----
 model Wallet {
-  id               BigInt   @id @default(autoincrement())
-  accountId        BigInt
-  categoryId       BigInt
+  id               Int      @id @default(autoincrement())
+  accountId        Int
+  categoryId       Int
   name             String   @db.VarChar(255)
   currencyId       Int
   excludeFromTotal Boolean  @default(false)
@@ -101,8 +103,8 @@ model Wallet {
 }
 
 model WalletCategories {
-  id        BigInt   @id @default(autoincrement())
-  accountId BigInt
+  id        Int      @id @default(autoincrement())
+  accountId Int
   name      String   @db.VarChar(50)
   isRemove  Boolean? @default(false)
   createdAt DateTime @default(now())
