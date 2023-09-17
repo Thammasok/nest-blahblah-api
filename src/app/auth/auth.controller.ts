@@ -15,11 +15,10 @@ import {
   AuthSignUpDto,
   AuthVerifyMailDto,
 } from './dto'
-import { Tokens } from './types/tokens.type'
-import { AccessTokenGuard, RefreshTokenGuard } from '../../common/guards'
+import { RefreshTokenGuard } from '../../common/guards'
 import {
-  GetCurrentUser,
-  GetCurrentUserId,
+  GetCurrentAccountId,
+  GetCurrentAccount,
   Public,
 } from '../../common/decorators'
 import { AuthService } from './auth.service'
@@ -35,10 +34,10 @@ export class AuthController {
     @Body() dto: AuthSignInDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const user = await this.authService.signinLocal(dto)
+    const user = await this.authService.signin(dto)
 
     // set cookie
-    res.cookie('refresh_token', user.token.refresh_token, {
+    res.cookie('refresh_token', user.tokens.refresh_token, {
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7d
       httpOnly: true,
     })
@@ -49,17 +48,18 @@ export class AuthController {
   @Public()
   @Post('signup')
   @HttpCode(HttpStatus.OK)
-  signupLocal(@Body() dto: AuthSignUpDto) {
-    return this.authService.signupLocal(dto)
+  async signupLocal(@Body() dto: AuthSignUpDto) {
+    const user = await this.authService.signup(dto)
+    return user
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(
-    @GetCurrentUserId() userId: string,
+    @GetCurrentAccountId() accountId: number,
     @Res({ passthrough: true }) res: Response,
   ) {
-    await this.authService.logout(userId)
+    await this.authService.logout(accountId)
     res.clearCookie('refresh_token')
     return { msg: 'logout is success' }
   }
@@ -68,12 +68,12 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refreshTokens(
-    @GetCurrentUserId() userId: string,
-    @GetCurrentUser('refreshToken') refreshToken: string,
+    @GetCurrentAccountId() accountId: number,
+    @GetCurrentAccount('refreshToken') refreshToken: string,
     @Res({ passthrough: true }) res: Response,
   ) {
     const { access_token, refresh_token } =
-      await this.authService.refreshTokens(userId, refreshToken)
+      await this.authService.refreshTokens(accountId, refreshToken)
     res.cookie('refresh_token', refresh_token, {
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7d
       httpOnly: true,
@@ -85,7 +85,7 @@ export class AuthController {
   @Post('resend-verify')
   @HttpCode(HttpStatus.OK)
   resendVerifyMail(@Body() dto: AuthResendVerifyDto) {
-    return this.authService.resendVerifyMail(dto)
+    return this.authService.sendVerifyMail(dto)
   }
 
   @Public()

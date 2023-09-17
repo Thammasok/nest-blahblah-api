@@ -17,12 +17,12 @@ const configModule = new ConfigService()
         )}" <${configModule.get('MAIL_DEFAULT_FROM_EMAIL')}>`,
       },
       template: {
-        dir: process.cwd() + '/src/helpers/mail/templates/',
+        dir: process.cwd() + '/src/libs/mail/templates/',
         adapter: new HandlebarsAdapter(undefined, {
           inlineCssEnabled: true,
           /** See https://www.npmjs.com/package/inline-css#api */
           inlineCssOptions: {
-            url: process.cwd() + '/src/helpers/mail/templates/css/style.css',
+            url: process.cwd() + '/src/libs/mail/templates/css/style.css',
             preserveMediaQueries: true,
           },
         }),

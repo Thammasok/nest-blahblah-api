@@ -1,5 +1,5 @@
 export type JwtPayload = {
-  userId: number
+  accountId: string
   email: string
   sub: 'access_token' | 'refresh_token'
 }

@@ -2,8 +2,8 @@ import PrismaClient from '@prisma/client'
 import * as uuid from 'uuid'
 import { ConfigService } from '@nestjs/config'
 
-import { PrismaService } from '../../../helpers/prisma/prisma.service'
-import { UuidStrategy } from './uuid.strategy'
+import { PrismaService } from '../../../../libs/prisma/prisma.service'
+import { UuidStrategy } from '../uuid.strategy'
 
 // Mocking data
 const uuidResult = 'random-uuid-12345'
@@ -41,12 +41,12 @@ describe('UUID Strategy', () => {
   })
 
   describe('UUID Strategy', () => {
-    it("getUUID don't have uuid", async () => {
-      const uid = await uuidStrategy.getUUID()
+    it("getAccountUUID don't have uuid", async () => {
+      const uid = await uuidStrategy.getAccountUUID()
 
       expect(uuid.v4).toBeCalled
       expect(PrismaClient).toBeCalled
-      expect(uuidStrategy.getUUID).toBeCalled
+      expect(uuidStrategy.getAccountUUID).toBeCalled
       expect(uid).toBe(uuidResult)
     })
   })
