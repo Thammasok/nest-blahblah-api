@@ -7,7 +7,7 @@ import {
   RefreshTokenStrategy,
   UuidStrategy,
 } from './strategies'
-import { MailService } from 'src/helpers/mail/mail.service'
+import { MailService } from 'src/libs/mail/mail.service'
 
 @Module({
   imports: [JwtModule.register({})],

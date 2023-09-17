@@ -13,8 +13,8 @@ import {
 } from '../auth/dto'
 import { Tokens } from './types/tokens.type'
 import { UuidStrategy } from './strategies'
-import { PrismaService } from '../../helpers/prisma/prisma.service'
-import { MailService } from '../../helpers/mail/mail.service'
+import { PrismaService } from '../../libs/prisma/prisma.service'
+import { MailService } from '../../libs/mail/mail.service'
 
 @Injectable()
 export class AuthService {
