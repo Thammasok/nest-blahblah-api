@@ -2,8 +2,8 @@ import PrismaClient from '@prisma/client'
 import * as uuid from 'uuid'
 import { ConfigService } from '@nestjs/config'
 
-import { PrismaService } from '../../../../libs/prisma/prisma.service'
-import { UuidStrategy } from '../uuid.strategy'
+import { PrismaService } from 'src/libs/prisma/prisma.service'
+import { UuidStrategy } from 'src/app/auth/strategies/uuid.strategy'
 
 // Mocking data
 const uuidResult = 'random-uuid-12345'

@@ -1,12 +1,12 @@
-import { JwtPayload } from '../../app/auth/types'
 import {
   createParamDecorator,
   ExecutionContext,
   HttpException,
   HttpStatus,
 } from '@nestjs/common'
-import { PrismaService } from '../../libs/prisma/prisma.service'
 import { ConfigService } from '@nestjs/config'
+import { JwtPayload } from 'src/app/auth/types'
+import { PrismaService } from 'src/libs/prisma/prisma.service'
 
 export const GetCurrentAccountId = createParamDecorator(
   async (_data: undefined, context: ExecutionContext): Promise<number> => {

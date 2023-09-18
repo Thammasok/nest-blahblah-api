@@ -14,14 +14,14 @@ import {
   AuthSignInDto,
   AuthSignUpDto,
   AuthVerifyMailDto,
-} from './dto'
-import { RefreshTokenGuard } from '../../common/guards'
+} from 'src/app/auth/dto'
+import { RefreshTokenGuard } from 'src/common/guards'
 import {
   GetCurrentAccountId,
   GetCurrentAccount,
   Public,
-} from '../../common/decorators'
-import { AuthService } from './auth.service'
+} from 'src/common/decorators'
+import { AuthService } from 'src/app/auth/auth.service'
 
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
