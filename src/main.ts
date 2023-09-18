@@ -1,8 +1,9 @@
-import { Logger, ValidationPipe, VersioningType } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
-import cookieParser from 'cookie-parser'
-import { AppModule } from './app.module'
 import { ConfigService } from '@nestjs/config'
+import cookieParser from 'cookie-parser'
+import { Logger, ValidationPipe, VersioningType } from '@nestjs/common'
+
+import { AppModule } from 'src/app.module'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
@@ -28,4 +29,5 @@ async function bootstrap() {
   await app.listen(port)
   logger.verbose(`listening on port ${port}`)
 }
+
 bootstrap()

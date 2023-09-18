@@ -1,9 +1,9 @@
 import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common'
 import { User } from '@prisma/client'
-import { GetUser } from '../auth/decorator'
+import { GetUser } from 'src/app/auth/decorator'
 import { AccessTokenGuard } from 'src/common/guards'
-import { EditUserDto } from './dto'
-import { UserService } from './user.service'
+import { EditUserDto } from 'src/app/user/dto'
+import { UserService } from 'src/app/user/user.service'
 
 @UseGuards(AccessTokenGuard)
 @Controller({ path: 'users', version: '1' })

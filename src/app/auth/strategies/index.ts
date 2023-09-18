@@ -1,3 +1,3 @@
-export * from './activeToken.strategy'
-export * from './refreshToken.strategy'
-export * from './uuid.strategy'
+export * from 'src/app/auth/strategies/activeToken.strategy'
+export * from 'src/app/auth/strategies/refreshToken.strategy'
+export * from 'src/app/auth/strategies/uuid.strategy'
