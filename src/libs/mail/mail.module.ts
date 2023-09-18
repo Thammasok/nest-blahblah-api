@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { MailerModule } from '@nestjs-modules/mailer'
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter'
 
-import { MailService } from './mail.service'
+import { MailService } from 'src/libs/mail/mail.service'
 
 const configModule = new ConfigService()
 

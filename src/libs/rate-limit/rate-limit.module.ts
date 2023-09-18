@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common'
 import { ThrottlerModule } from '@nestjs/throttler'
-import { RateLimitService } from './rate-limit.service'
 import { ConfigService } from '@nestjs/config'
+
+import { RateLimitService } from 'src/libs/rate-limit/rate-limit.service'
 
 const configService = new ConfigService()
 

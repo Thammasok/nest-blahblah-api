@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
-// import * as path from 'path'
 import { AcceptLanguageResolver, I18nModule, QueryResolver } from 'nestjs-i18n'
+// import * as path from 'path'
 
 /**
  * https://nestjs-i18n.com/

@@ -10,11 +10,11 @@ import {
   AuthSignInDto,
   AuthSignUpDto,
   AuthVerifyMailDto,
-} from '../auth/dto'
-import { Tokens } from './types/tokens.type'
-import { UuidStrategy } from './strategies'
-import { PrismaService } from '../../libs/prisma/prisma.service'
-import { MailService } from '../../libs/mail/mail.service'
+} from 'src/app/auth/dto'
+import { Tokens } from 'src/app/auth/types/tokens.type'
+import { UuidStrategy } from 'src/app/auth/strategies'
+import { PrismaService } from 'src/libs/prisma/prisma.service'
+import { MailService } from 'src/libs/mail/mail.service'
 
 @Injectable()
 export class AuthService {

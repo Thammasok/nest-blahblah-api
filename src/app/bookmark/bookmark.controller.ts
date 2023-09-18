@@ -11,10 +11,10 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common'
-import { GetUser } from '../../common/decorators'
-import { CreateBookmarkDto, EditBookmarkDto } from './dto'
-import { BookmarkService } from './bookmark.service'
+import { CreateBookmarkDto, EditBookmarkDto } from 'src/app/bookmark/dto'
+import { BookmarkService } from 'src/app/bookmark/bookmark.service'
 import { AccessTokenGuard } from 'src/common/guards'
+import { GetCurrentAccountId } from 'src/common/decorators'
 
 @UseGuards(AccessTokenGuard)
 @Controller('bookmarks')
@@ -22,41 +22,41 @@ export class BookmarkController {
   constructor(private bookmarkService: BookmarkService) {}
 
   @Get()
-  getBookmarks(@GetUser('id') userId: number) {
-    return this.bookmarkService.getBookmarks(userId)
+  getBookmarks(@GetCurrentAccountId() accountId: number) {
+    return this.bookmarkService.getBookmarks(accountId)
   }
 
   @Get(':id')
   getBookmarkById(
-    @GetUser('id') userId: number,
+    @GetCurrentAccountId() accountId: number,
     @Param('id', ParseIntPipe) bookmarkId: number,
   ) {
-    return this.bookmarkService.getBookmarkById(userId, bookmarkId)
+    return this.bookmarkService.getBookmarkById(accountId, bookmarkId)
   }
 
   @Post()
   createBookmark(
-    @GetUser('id') userId: number,
+    @GetCurrentAccountId() accountId: number,
     @Body() dto: CreateBookmarkDto,
   ) {
-    return this.bookmarkService.createBookmark(userId, dto)
+    return this.bookmarkService.createBookmark(accountId, dto)
   }
 
   @Patch(':id')
   editBookmarkById(
-    @GetUser('id') userId: number,
+    @GetCurrentAccountId() accountId: number,
     @Param('id', ParseIntPipe) bookmarkId: number,
     @Body() dto: EditBookmarkDto,
   ) {
-    return this.bookmarkService.editBookmarkById(userId, bookmarkId, dto)
+    return this.bookmarkService.editBookmarkById(accountId, bookmarkId, dto)
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   deleteBookmarkById(
-    @GetUser('id') userId: number,
+    @GetCurrentAccountId() accountId: number,
     @Param('id', ParseIntPipe) bookmarkId: number,
   ) {
-    return this.bookmarkService.deleteBookmarkById(userId, bookmarkId)
+    return this.bookmarkService.deleteBookmarkById(accountId, bookmarkId)
   }
 }

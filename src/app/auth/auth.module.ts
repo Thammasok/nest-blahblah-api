@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common'
-import { AuthController } from './auth.controller'
-import { AuthService } from './auth.service'
+import { AuthController } from 'src/app/auth/auth.controller'
+import { AuthService } from 'src/app/auth/auth.service'
 import { JwtModule } from '@nestjs/jwt'
 import {
   AccessTokenStrategy,
   RefreshTokenStrategy,
   UuidStrategy,
-} from './strategies'
+} from 'src/app/auth/strategies'
 import { MailService } from 'src/libs/mail/mail.service'
 
 @Module({

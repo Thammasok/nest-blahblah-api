@@ -1,1 +1,1 @@
-export * from './auth.dto'
+export * from 'src/app/auth/dto/auth.dto'
