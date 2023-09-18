@@ -1,3 +1,6 @@
+-- CreateEnum
+CREATE TYPE "CategoryTypes" AS ENUM ('expense', 'income');
+
 -- CreateTable
 CREATE TABLE "account" (
     "id" SERIAL NOT NULL,
@@ -56,13 +59,14 @@ CREATE TABLE "account_setting" (
 CREATE TABLE "wallet" (
     "id" SERIAL NOT NULL,
     "accountId" INTEGER NOT NULL,
-    "categoryId" INTEGER NOT NULL,
-    "name" VARCHAR(255) NOT NULL,
     "currencyId" INTEGER NOT NULL,
+    "name" VARCHAR(255) NOT NULL,
+    "image" VARCHAR(255) NOT NULL,
     "excludeFromTotal" BOOLEAN NOT NULL DEFAULT false,
     "isRemove" BOOLEAN DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "walletCategoryListId" INTEGER,
 
     CONSTRAINT "wallet_pkey" PRIMARY KEY ("id")
 );
@@ -70,8 +74,12 @@ CREATE TABLE "wallet" (
 -- CreateTable
 CREATE TABLE "wallet_categories" (
     "id" SERIAL NOT NULL,
-    "accountId" INTEGER NOT NULL,
+    "walletId" INTEGER NOT NULL,
     "name" VARCHAR(50) NOT NULL,
+    "image" VARCHAR(255) NOT NULL,
+    "type" "CategoryTypes" NOT NULL DEFAULT 'expense',
+    "isParent" BOOLEAN DEFAULT false,
+    "parentId" INTEGER,
     "isRemove" BOOLEAN DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -85,6 +93,7 @@ CREATE TABLE "currency_list" (
     "name" VARCHAR(50) NOT NULL,
     "symbol" VARCHAR(4) NOT NULL,
     "isoCode" VARCHAR(4) NOT NULL,
+    "image" VARCHAR(255) NOT NULL,
     "isRemove" BOOLEAN DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -143,13 +152,10 @@ ALTER TABLE "account_setting" ADD CONSTRAINT "account_setting_accountId_fkey" FO
 ALTER TABLE "wallet" ADD CONSTRAINT "wallet_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "account"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "wallet" ADD CONSTRAINT "wallet_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "wallet_categories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "wallet" ADD CONSTRAINT "wallet_currencyId_fkey" FOREIGN KEY ("currencyId") REFERENCES "currency_list"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "wallet_categories" ADD CONSTRAINT "wallet_categories_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "account"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "wallet_categories" ADD CONSTRAINT "wallet_categories_walletId_fkey" FOREIGN KEY ("walletId") REFERENCES "wallet"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "bookmarks" ADD CONSTRAINT "bookmarks_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

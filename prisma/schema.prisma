@@ -24,11 +24,10 @@ model Account {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  AccountVerify    AccountVerify?
-  AccountToken     AccountToken?
-  AccountSetting   AccountSetting?
-  Wallet           Wallet[]
-  WalletCategories WalletCategories[]
+  AccountVerify  AccountVerify?
+  AccountToken   AccountToken?
+  AccountSetting AccountSetting?
+  Wallet         Wallet[]
 
   // Mapping
   @@map("account")
@@ -85,37 +84,46 @@ model AccountSetting {
 model Wallet {
   id               Int      @id @default(autoincrement())
   accountId        Int
-  categoryId       Int
-  name             String   @db.VarChar(255)
   currencyId       Int
+  name             String   @db.VarChar(255)
+  image            String   @db.VarChar(255)
   excludeFromTotal Boolean  @default(false)
   isRemove         Boolean? @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   // Releations
-  Account          Account           @relation(fields: [accountId], references: [id])
-  WalletCategories WalletCategories? @relation(fields: [categoryId], references: [id])
-  CurrencyLists    CurrencyLists?    @relation(fields: [currencyId], references: [id])
+  Account              Account            @relation(fields: [accountId], references: [id])
+  CurrencyLists        CurrencyLists?     @relation(fields: [currencyId], references: [id])
+  WalletCategories     WalletCategories[]
+  walletCategoryListId Int?
 
   // Mapping
   @@map("wallet")
 }
 
 model WalletCategories {
-  id        Int      @id @default(autoincrement())
-  accountId Int
-  name      String   @db.VarChar(50)
-  isRemove  Boolean? @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        Int           @id @default(autoincrement())
+  walletId  Int
+  name      String        @db.VarChar(50)
+  image     String        @db.VarChar(255)
+  type      CategoryTypes @default(expense)
+  isParent  Boolean?      @default(false)
+  parentId  Int?
+  isRemove  Boolean?      @default(false)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   // Releations
-  Account Account  @relation(fields: [accountId], references: [id])
-  Wallet  Wallet[]
+  Wellet Wallet @relation(fields: [walletId], references: [id])
 
   // Mapping
   @@map("wallet_categories")
+}
+
+enum CategoryTypes {
+  expense
+  income
 }
 
 model CurrencyLists {
@@ -123,6 +131,7 @@ model CurrencyLists {
   name      String   @db.VarChar(50)
   symbol    String   @db.VarChar(4)
   isoCode   String   @db.VarChar(4)
+  image     String   @db.VarChar(255)
   isRemove  Boolean? @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

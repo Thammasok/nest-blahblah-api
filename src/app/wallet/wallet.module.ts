@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
-import { WalletController } from './wallet.controller'
-import { WalletService } from './wallet.service'
+import { WalletController } from 'src/app/wallet/wallet.controller'
+import { WalletService } from 'src/app/wallet/wallet.service'
 
 @Module({
   controllers: [WalletController],
