@@ -1,6 +1,6 @@
 import { Controller, HttpCode, HttpStatus, Post } from '@nestjs/common'
 import { WalletCategoryService } from './wallet-category.service'
-import { GetCurrentUserId } from 'src/common/decorators'
+import { GetCurrentAccountId } from 'src/common/decorators'
 
 @Controller({ path: 'wallet-category', version: '1' })
 export class WalletCategoryController {
@@ -8,11 +8,10 @@ export class WalletCategoryController {
 
   @Post('list')
   @HttpCode(HttpStatus.OK)
-  async walletCategoriesList(@GetCurrentUserId() userId: number) {
-    const user = await this.walletCategoryService.getWalletCategoriesLists(
-      userId,
-    )
+  async walletCategoriesList(@GetCurrentAccountId() accountId: number) {
+    const walletCategoryLists =
+      await this.walletCategoryService.getWalletCategoriesLists(accountId)
 
-    return user
+    return walletCategoryLists
   }
 }
